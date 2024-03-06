@@ -1,18 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {
-    User
-} = require('../db/db');
-const {
-    z,
-    ZodError
-} = require('zod');
+const {User , Account} = require('../db/db');
+const {z,ZodError} = require('zod');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {
-    authenticateJwt,
-    secretKey
-} = require('../middleware/auth')
+const {authenticateJwt,secretKey} = require('../middleware/auth')
 
 require("dotenv").config();
 const secretkey = process.env.MY_SECRET_KEY;
@@ -24,89 +16,116 @@ const signupSchema = z.object({
     password: z.string().min(6)
 })
 
-router.post('/signup', async (req, res) => {
-    const username = req.body.username;
-    const user = await User.findOne({
-        username
-    });
-    if (user) {
-        return res.status(403).json({
-            message: 'User already exists'
-        });
-    }
-    try {
-        const userData = signupSchema.parse(req.body);
-        const hashedPassword = await bcrypt.hash(userData.password, 10)
+// router.post('/signup', async (req, res) => {
+//     const username = req.body.username;
+//     const existingUser = await User.findOne({
+//         username
+//     });
+//     if (existingUser) {
+//         return res.status(403).json({
+//             message: 'User already exists'
+//         });
+//     }
+//     try {
+//         const userData = signupSchema.safeParse(req.body);
+//         console.log(userData);
+//         // const hashedPassword = await bcrypt.hash(userData.password, 10)
+//         // console.log(hashedPassword);
 
-        const newUser = new User({
-            username: userData.username,
-            firstname: userData.firstname,
-            lastname: userData.lastname,
-            password: hashedPassword
+//         // const newUser = new User({
+//         //     username: userData.username,
+//         //     firstname: userData.firstname,
+//         //     lastname: userData.lastname,
+//         //     password: hashedPassword
+//         // })
+//         const user = await User.create({
+//             username: userData.username,
+//             firstname: userData.firstname,
+//             lastname: userData.lastname,
+//             password: userData.password
+//         })
+//         const userId = user._id;
+//         await Account.create({
+//             userId,
+//             balance: 1 + Math.random() * 10000
+//         })
+//         const token = jwt.sign({userId}, secretkey);
+//         res.status(200).json({success: true, msg: 'SignUp Successful : New User Created', token: token, data: userData});
+//     } catch (error) {
+//         if (error instanceof ZodError) {
+//             res.status(411).json({
+//                 success: false,
+//                 msg: 'validation failed'
+//             });
+//         } else {
+//             console.error(error);
+//             res.status(500).json({
+//                 success: false,
+//                 msg: 'Internal Server Error'
+//             });
+//         }
+//     }
+
+// })
+router.post("/signup", async (req, res) => {
+    const { success } = signupSchema.safeParse(req.body)
+    if (!success) {
+        return res.status(411).json({
+            message: "Incorrect inputs"
         })
-        // const user = await User.create({
-        //     username: req.body.username,
-        //     password: req.body.password,
-        //     firstName: req.body.firstName,
-        //     lastName: req.body.lastName,
-        // })
-        // const userId = user._id;
-
-        // const token = jwt.sign({
-        //     userId
-        // }, secretkey);
-
-        // res.status(200).json({success : true , msg : 'SignUp Successful : New User Created' , token : token , data: userData});
-
-        await newUser.save();
-        const userId = newUser._id;
-        const token = jwt.sign({
-            userId
-        }, secretkey);
-        res.status(200).json({
-            success: true,
-            msg: 'SignUp Successful : New User Created',
-            token: token,
-            data: userData
-        });
-    } catch (error) {
-        if (error instanceof ZodError) {
-            res.status(411).json({
-                success: false,
-                msg: 'validation failed'
-            });
-        } else {
-            console.error(error);
-            res.status(500).json({
-                success: false,
-                msg: 'Internal Server Error'
-            });
-        }
     }
 
+    const existingUser = await User.findOne({
+        username: req.body.username
+    })
+
+    if (existingUser) {
+        return res.status(411).json({
+            message: "Email already taken"
+        })
+    }
+
+    const user = await User.create({
+        username: req.body.username,
+        password: req.body.password,
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+    })
+    const userId = user._id;
+
+		/// ----- Create new account ------
+
+    await Account.create({
+        userId,
+        balance: 1 + Math.random() * 10000
+    })
+
+		/// -----  ------
+
+    const token = jwt.sign({
+        userId
+    }, secretkey);
+
+    res.json({
+        message: "User created successfully",
+        token: token
+    })
 })
 
 router.post('/signin', async (req, res) => {
-    const {
-        username,
-        password
-    } = req.body;
-    const user = await User.findOne({
-        username
-    });
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const {username,password} = req.body;
+    const user = await User.findOne({username});
+    // const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordValid) {
-        return res.status(401).json({
-            message: "Invalid password"
-        });
-    }
+    // if (!isPasswordValid) {
+    //     return res.status(401).json({
+    //         message: "Invalid password"
+    //     });
+    // }
     const userId = user._id;
 
     if (user) {
-        const token = jwt.sign({
-            userId
-        }, secretkey);
+        const token = jwt.sign({userId}, secretkey);
         res.status(200).json({
             success: true,
             msg: 'Signin Successful : Welcome back',
