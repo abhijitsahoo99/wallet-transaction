@@ -20,6 +20,8 @@ model User {
   name String?
   number String @unique
   password String
+  OnRampTransaction OnRampTransaction[]
+  Balance Balance[]
 }
 
 model Merchant {
@@ -29,7 +31,36 @@ model Merchant {
   auth_type AuthType
 }
 
+model Balance {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  amount Int
+  locked Int
+  user   User @relation(fields: [userId], references: [id])
+}
+// Todo: when user signup, set the initial balance to 0  
+
+model OnRampTransaction {
+  id Int @id @default(autoincrement()) 
+  status  OnRampStatus
+  token String
+  provider String
+  amount Int
+  startTime DateTime
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+// OffRampTransaction
+// wallet transaction user to user
+// merchant  
+
 enum AuthType {
   Google
   Github
+}
+
+enum OnRampStatus {
+  Success
+  Failure
+  Processing
 }
