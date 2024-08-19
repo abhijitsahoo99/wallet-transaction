@@ -1,10 +1,15 @@
+import { getServerSession } from "next-auth";
 import { SidebarItem } from "../../components/SidebarItem";
+import { authOptions } from "../lib/auth";
+import { redirect } from "next/navigation";
 
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}): JSX.Element {
+export default async function Layout({children}: {children: React.ReactNode}){
+
+
+  const session = await getServerSession(authOptions)
+  if(!session?.user){
+    redirect("/signin")
+  }
   return (
     <div className="flex">
       <div className="w-72 border-r border-slate-300 min-h-screen mr-4 pt-28">
