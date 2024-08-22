@@ -11,7 +11,7 @@ export const TextInput = ({
 }) => {
   return (
     <div className="pt-2">
-      <label className="block mb-2 text-sm font-medium text-gray-900">
+      <label className="block mb-2 text-sm font-medium text-[rgb(96,165,250)]">
         {label}
       </label>
       <input
