@@ -1,7 +1,6 @@
 import prisma from "@repo/db/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
-import { Console } from "console";
 
 async function getName() {
   const session = await getServerSession(authOptions);
