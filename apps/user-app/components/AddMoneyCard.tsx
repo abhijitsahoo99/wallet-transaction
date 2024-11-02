@@ -52,7 +52,7 @@ export const AddMoney = () => {
           <Button
             onClick={async () => {
               const res = await createOnRampTransaction(provider, value);
-              window.alert(res.message);
+              window.location.reload();
             }}
           >
             Add Money
